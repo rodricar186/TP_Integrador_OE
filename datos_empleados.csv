@@ -1,8 +1,8 @@
-id_empleado,nombre_empleado,apellido_empleado,saldo_dias
-227,Carolina,Rodríguez,27
-291,Juan,Reyes,30
-225,Agustina,Flores,15
-215,Pablo,Quintana,10
-340,Marcela,Martinelli,2
-280,José,Lima,22
-150,Natalia,Spallino,8
+id_empleado,nombre_empleado,saldo_dias
+227,Carolina Rodríguez,27
+291,Juan Reyes,30
+225,Agustina Flores,15
+215,Pablo Quintana,10
+340,Marcela Martinelli,2
+280,José Lima,22
+150,Natalia Spallino,8

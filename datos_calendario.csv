@@ -1,8 +1,6 @@
 id_empleado,nombre_empleado,fecha_inicio,fecha_fin
-227,Carolina Rodríguez,12/03,19/03
-291,Juan Reyes,25/08,10/09
-225,Agustina Flores,15/04,22/04
-215,Pablo Quintana,12/12,28/12
-340,Marcela Martinelli,15/07,28/07
-280,José Lima,12/10,29/10
-150,Natalia Spallino,01/01,20/01
+101,Carolina Rodríguez,12/03/2026,19/03/2026
+102,Juan Reyes,15/03/2026,21/03/2026
+201,José Lima,12/10/2026,18/10/2026
+302,Sofía Pérez,01/06/2026,05/06/2026
+403,Marcelo Pagano,02/07/2026,09/07/2026

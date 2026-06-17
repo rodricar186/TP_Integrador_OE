@@ -105,16 +105,11 @@ class Esperando_fechas:
             fecha_inicio = validar_inicio_vacaciones(fecha_inicio)
             fecha_fin = input(f"Bot: {info_empleado['nombre_empleado']}, ingresá la fecha de fin para tus vacaciones: ").strip()
             fecha_fin = validar_fecha(fecha_fin) #Valido que fin sea > a inicio?
-            intervalo = fecha_fin - fecha_inicio
-
-            if intervalo <= int(info_empleado['saldo_dias']):
-
-                bot.estado = Validando_saldo()
             
-            else:
-
-                print("Bot: No posee días suficientes para tomarse esas fechas.")
-
+            bot.fecha_inicio = fecha_inicio
+            bot.fecha_fin = fecha_fin
+            bot.estado = Validando_saldo()
+            bot.estado.procesar(bot, None)
 
         else:
 
@@ -125,6 +120,10 @@ class Esperando_fechas:
 class Validando_saldo:
 
     def procesar(self, bot, mensaje):
+
+        intervalo = (bot.fecha_fin - bot.fecha_inicio).days
+        print(intervalo)
+
         pass
 
 class Bot:

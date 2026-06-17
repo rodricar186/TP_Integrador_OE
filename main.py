@@ -68,8 +68,71 @@ def validar_inicio_vacaciones(texto):
         else:
             return texto
 
+# Función que verifica superposición de vacaciones en mismo sector
+def puede_tomar_vacaciones(id_emp, f_inicio, f_fin):
+    #formato_fecha = "%d/%m/%Y"
 
+    # Se determina sector del empleado solicitante
+    sector_solicitante = str(id_emp)[0]
+    # Se inicializa contador para superposición
+    contador = 0
+   
+    with open(archivo2, "r", encoding="utf-8") as ar:
+        lector_dict = csv.DictReader(ar)
+        for fila in lector_dict:
+            id = fila["id_empleado"]
+            sector_existente = id[0]
+            if sector_existente == sector_solicitante:
+                # Si son del mismo sector se verifican las fechas
+                inicio_existente = validar_fecha(fila["fecha_inicio"]) #datetime.strptime(fila["fecha_inicio"], formato_fecha)
+                fin_existente = validar_fecha(fila["fecha_fin"]) #datetime.strptime(fila["fecha_fin"], formato_fecha)
+                
+                if (f_inicio <= fin_existente and f_fin >= inicio_existente):
+                    contador += 1
+                
+                # Si ya hay dos personas, no se puede
+                if contador == 2:
+                    return False
+    
+    # Si se sale del bucle con menos de 2 coincidencias
+    return True
 
+def actualizar_calendario(diccionario, f_inicio, f_fin):
+    columnas = ["id_empleado","nombre_empleado","fecha_inicio","fecha_fin"]
+    datos = {}
+    datos["id_empleado"] = diccionario["id_empleado"]
+    datos["nombre_empleado"] = diccionario["nombre_empleado"]
+    datos["fecha_inicio"] = f_inicio.strftime("%d/%m/%Y")
+    datos["fecha_fin"] = f_fin.strftime("%d/%m/%Y")
+    with open(archivo2, "a", encoding="utf-8",  newline="") as ar:
+        #Creamos el escritor indicando los nombres de columnas
+        escritor_dict = csv.DictWriter(ar, fieldnames=columnas)
+        #Escribimos los datos
+        escritor_dict.writerow(datos)
+
+def actualizar_datos_empleado(datos_empleado, dias_descontar):
+    try:
+        #Definimos el orden como claves del diccionario
+        columnas = ["id_empleado", "nombre_empleado", "saldo_dias"]
+        #Definimos una lista auxiliar de diccionarios
+        lista =[]
+        with open(archivo1, "r", encoding="utf-8",  newline="") as ar:
+            lector_dict = csv.DictReader(ar)
+            for diccionario in lector_dict:
+                if datos_empleado["id_empleado"] == diccionario['id_empleado']:
+                    diccionario['saldo_dias'] = int(diccionario['saldo_dias']) - dias_descontar
+                #Agregamos todos los diccionarios como estaban + el corregido
+                lista.append(diccionario)
+        with open(archivo1, "w", encoding="utf-8",  newline="") as ar:
+            #Creamos el escritor indicando los nombres de columnas
+            escritor_dict = csv.DictWriter(ar, fieldnames=columnas)
+            #Escribimos el encabezado
+            escritor_dict.writeheader()
+            #Actualizamos el archivo
+            escritor_dict.writerows(lista)
+    except FileNotFoundError:
+        print(f"Error: el archivo '{archivo1}' no existe.")
+        return None
 
 ##########################################
 ###### Inicialización del chatbot ########
@@ -108,6 +171,7 @@ class Esperando_fechas:
             
             bot.fecha_inicio = fecha_inicio
             bot.fecha_fin = fecha_fin
+            bot.info_empleado = info_empleado
             bot.estado = Validando_saldo()
             bot.estado.procesar(bot, None)
 
@@ -122,9 +186,49 @@ class Validando_saldo:
     def procesar(self, bot, mensaje):
 
         intervalo = (bot.fecha_fin - bot.fecha_inicio).days
-        print(intervalo)
+        
+        # Validar que tenga saldo suficiente
+        if intervalo > int(bot.info_empleado["saldo_dias"]):
+            print(f"Bot: Sólo tienes {bot.info_empleado["saldo_dias"]}")
+            print("Bot: No se puede realizar la solicitud")
+            respuesta = input("Bot: Queres solicitar solo los dias disponibles? (si/no): ").strip().lower()
+            if respuesta == "si":
+                intervalo = int(bot.info_empleado["saldo_dias"])
 
-        pass
+                bot.fecha_fin = bot.fecha_inicio + timedelta(days=intervalo - 1)
+                print(f"Bot: Ajustamos a {intervalo} dias")
+                print(f"Bot: Hasta el {bot.fecha_fin.strftime('%d/%m/%Y')}")
+            
+            else:
+                print("Bot: Tramite cancelado por falta de saldo.\n")
+                #bot.estado = Finalizar()
+
+        # Validar que no haya superposición de empleados del mismo sector
+        id = bot.info_empleado["id_empleado"]
+        if puede_tomar_vacaciones(id, bot.fecha_inicio, bot.fecha_fin):
+            bot.estado = Esperando_aprobacion()
+            bot.estado.procesar(bot, None)
+        else:
+            print("Bot: No es posible solicitar vacaciones para la fecha solicitada")
+            print("Bot: Ya hay dos empleados con los que se superponen fechas.")
+
+
+class Esperando_aprobacion:
+    
+    def procesar(self, bot, mensaje):
+        print("Esperando aprobación del supervisor...")
+        input("")
+        actualizar_calendario(bot.info_empleado, bot.fecha_inicio, bot.fecha_fin)
+        dias_pedidos = (bot.fecha_fin - bot.fecha_inicio).days
+        actualizar_datos_empleado(bot.info_empleado, dias_pedidos)
+        print("Solicitud APROBADA!")
+        bot.estado = Finalizado()
+        bot.estado.procesar(bot, None)
+
+class Finalizado:
+    def procesar(self, bot, mensaje):
+        print("Bot: Adiós!")
+
 
 class Bot:
 
@@ -140,7 +244,7 @@ class Bot:
 ################## MAIN ##################
 ##########################################
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 archivo1 = "temp1.csv"
 archivo2 = "temp2.csv"

@@ -23,14 +23,18 @@ def validar_entero_positivo(num):
             return num
 
 #Creamos una función para validar la existencia del id ingresado
-def validar_existencia(archivo, texto):
+def validar_existencia(archivo, num):
     try:
         with open(archivo, "r", encoding="utf-8") as ar:
             lector_dict = csv.DictReader(ar)
+            #Creamos un diccionario auxiliar
+            dict_empelado = {}
             for diccionario in lector_dict:
-                if texto == diccionario['nombre']:
-                    return texto
-            raise ValueError(f"El país {texto} no está en la lista.")
+                if num == int(diccionario['id_empleado']):
+                    #Si encuentra el id, guarda la info del empleado en el diccionario
+                    dict_empelado = diccionario
+                    return dict_empelado
+            raise ValueError(f"El id {num} no está en la lista.")
     except FileNotFoundError:
         print(f"Error: el archivo '{archivo}' no existe.")
         return None
@@ -38,6 +42,31 @@ def validar_existencia(archivo, texto):
         print("Error:", e)
         print()
         return None
+    
+#Creamos una función para validar el formato de las fechas ingresadas
+def validar_fecha(texto):
+    while True:
+        try:
+            texto = datetime.strptime(texto, "%d/%m/%Y")
+        except ValueError:
+            print("Bot: Lo siento, no reconozco ese formato. Por favor, ingresa la fecha como DD/MM/AAAA.")
+            texto = input(f"Bot: ingresá una fecha válida: ").strip()
+        else:
+            return texto
+
+#creamos una función para validar que 
+# el inicio no sea anterior a hoy --> regla del diccionario de datos
+def validar_inicio_vacaciones(texto):
+    while True:
+        try:
+            if texto.date() < datetime.now().date():
+                raise ValueError("La fecha ingresada ya pasó!")
+        except ValueError as e:
+            print("Error:", e)
+            texto = input(f"Bot: ingresá una fecha válida: ").strip()
+            texto = validar_fecha(texto)
+        else:
+            return texto
 
 
 
@@ -68,12 +97,35 @@ class Esperando_fechas:
 
             id = input("Bot: Decime tu número de identificación de empleado: ").strip()
             id = validar_entero_positivo(id)
+            info_empleado = validar_existencia(archivo1, id)
+            print(f"Bot: Hola {info_empleado['nombre_empleado']}!")
+            print(f"Bot: Te quedan {info_empleado['saldo_dias']} días de vacaciones disponibles.")
+            fecha_inicio = input(f"Bot: {info_empleado['nombre_empleado']}, ingresá la fecha de inicio para tus vacaciones: ").strip()
+            fecha_inicio = validar_fecha(fecha_inicio)
+            fecha_inicio = validar_inicio_vacaciones(fecha_inicio)
+            fecha_fin = input(f"Bot: {info_empleado['nombre_empleado']}, ingresá la fecha de fin para tus vacaciones: ").strip()
+            fecha_fin = validar_fecha(fecha_fin) #Valido que fin sea > a inicio?
+            intervalo = fecha_fin - fecha_inicio
+
+            if intervalo <= int(info_empleado['saldo_dias']):
+
+                bot.estado = Validando_saldo()
+            
+            else:
+
+                print("Bot: No posee días suficientes para tomarse esas fechas.")
+
 
         else:
 
             print("Bot: No entendí lo que escribiste!")
             print("Bot: Si querés iniciar una conversación, ingresá 'hola' o 'vacaciones'.")
             print("Bot: Escribí 'fin' cuando quieras terminar la conversación.")
+
+class Validando_saldo:
+
+    def procesar(self, bot, mensaje):
+        pass
 
 class Bot:
 
@@ -89,6 +141,10 @@ class Bot:
 ################## MAIN ##################
 ##########################################
 import csv
+from datetime import datetime
+
+archivo1 = "temp1.csv"
+archivo2 = "temp2.csv"
 
 bot = Bot()
 
@@ -98,7 +154,7 @@ while ejecutando:
 
     texto = input("Usuario: ").strip().lower()
 
-    if texto.strip().lower() == "fin":
+    if texto == "fin":
         ejecutando = False
 
     bot.recibir_mensaje(texto)

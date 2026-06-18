@@ -157,7 +157,8 @@ class Esperando_fechas:
 
         if mensaje == "fin":
 
-            print("Bot: Adiós!")
+            bot.estado = Finalizado()
+            bot.estado.procesar(bot, None)
         
         elif mensaje in ["hola","vacaciones"]:
 

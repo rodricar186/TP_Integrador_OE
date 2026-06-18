@@ -258,13 +258,6 @@ class Finalizado:
         bot.ejecutando = False
         return
 
-
-class Finalizado:
-    def procesar(self, bot, mensaje):
-        print("Bot: Adiós!")
-        bot.ejecutando = False
-        return
-
 class Bot:
 
     def __init__(self):

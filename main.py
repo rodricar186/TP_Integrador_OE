@@ -24,24 +24,27 @@ def validar_entero_positivo(num):
 
 #Creamos una función para validar la existencia del id ingresado
 def validar_existencia(archivo, num):
-    try:
-        with open(archivo, "r", encoding="utf-8") as ar:
-            lector_dict = csv.DictReader(ar)
-            #Creamos un diccionario auxiliar
-            dict_empelado = {}
-            for diccionario in lector_dict:
-                if num == int(diccionario['id_empleado']):
-                    #Si encuentra el id, guarda la info del empleado en el diccionario
-                    dict_empelado = diccionario
-                    return dict_empelado
-            raise ValueError(f"El id {num} no está en la lista.")
-    except FileNotFoundError:
-        print(f"Error: el archivo '{archivo}' no existe.")
-        return None
-    except ValueError as e:
-        print("Error:", e)
-        print()
-        return None
+    while True:
+        try:
+            with open(archivo, "r", encoding="utf-8") as ar:
+                lector_dict = csv.DictReader(ar)
+                #Creamos un diccionario auxiliar
+                dict_empelado = {}
+                for diccionario in lector_dict:
+                    if num == int(diccionario['id_empleado']):
+                        #Si encuentra el id, guarda la info del empleado en el diccionario
+                        dict_empelado = diccionario
+                        return dict_empelado
+                raise ValueError(f"El id {num} no está en la lista.")
+        except FileNotFoundError:
+            print(f"Error: el archivo '{archivo}' no existe.")
+            return None
+        except ValueError as e:
+            print("Error:", e)
+            num = input("Bot: Ingrese un id válido: ").strip()
+            num = validar_entero_positivo(num)
+        else:
+            return num
     
 #Creamos una función para validar el formato de las fechas ingresadas
 def validar_fecha(texto):
@@ -136,10 +139,20 @@ class Validando_saldo:
 
     def procesar(self, bot, mensaje):
 
-        intervalo = (bot.fecha_fin - bot.fecha_inicio).days
-        print(intervalo)
-
         pass
+        
+        
+
+
+class Esperando_aprobacion:
+    
+    def procesar(self, bot, mensaje):
+        pass
+
+class Finalizado:
+    def procesar(self, bot, mensaje):
+        print("Bot: Adiós!")
+        return
 
 class Bot:
 

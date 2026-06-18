@@ -152,6 +152,7 @@ class Esperando_aprobacion:
 class Finalizado:
     def procesar(self, bot, mensaje):
         print("Bot: Adiós!")
+        bot.ejecutando = False
         return
 
 class Bot:
@@ -159,6 +160,7 @@ class Bot:
     def __init__(self):
 
         self.estado = Inicio()
+        self.ejecutando = True
 
     def recibir_mensaje(self, mensaje):
 
@@ -175,14 +177,6 @@ archivo2 = "temp2.csv"
 
 bot = Bot()
 
-ejecutando = True
-
-while ejecutando:
-
-    texto = input("Usuario: ").strip().lower()
-
-    if texto == "fin":
-        ejecutando = False
-
-    bot.recibir_mensaje(texto)
-
+while bot.ejecutando:
+        texto = input("Usuario: ").strip().lower()
+        bot.recibir_mensaje(texto)

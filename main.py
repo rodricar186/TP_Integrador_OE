@@ -66,7 +66,7 @@ def validar_inicio_vacaciones(texto):
                 raise ValueError("La fecha ingresada ya pasó!")
         except ValueError as e:
             print("Error:", e)
-            texto = input(f"Bot: ingresá una fecha válida: ").strip()
+            texto = input(f"Bot: Ingresá una fecha válida: ").strip()
             texto = validar_fecha(texto)
         else:
             return texto
@@ -136,6 +136,22 @@ def actualizar_datos_empleado(datos_empleado, dias_descontar):
     except FileNotFoundError:
         print(f"Error: el archivo '{archivo1}' no existe.")
         return None
+#creamos una función para validar que 
+# el final no sea anterior al inicio --> regla del diccionario de datos
+def validar_final_vacaciones(inicio, final):
+    while True:
+        try:
+            if inicio.date() > final.date():
+                raise ValueError("La fecha ingresada es anterior a la inicial!")
+        except ValueError as e:
+            print("Error:", e)
+            final = input(f"Bot: Ingresá una fecha válida: ").strip()
+            final = validar_fecha(final)
+        else:
+            return final
+
+
+
 
 ##########################################
 ###### Inicialización del chatbot ########
@@ -172,8 +188,8 @@ class Esperando_fechas:
             fecha_inicio = validar_fecha(fecha_inicio)
             fecha_inicio = validar_inicio_vacaciones(fecha_inicio)
             fecha_fin = input(f"Bot: {info_empleado['nombre_empleado']}, ingresá la fecha de fin para tus vacaciones: ").strip()
-            
-            fecha_fin = validar_fecha(fecha_fin) #Valido que fin sea > a inicio?
+            fecha_fin = validar_fecha(fecha_fin)
+            fecha_fin = validar_final_vacaciones(fecha_inicio, fecha_fin)
             
             bot.fecha_inicio = fecha_inicio
             bot.fecha_fin = fecha_fin
@@ -242,6 +258,12 @@ class Finalizado:
         bot.ejecutando = False
         return
 
+
+class Finalizado:
+    def procesar(self, bot, mensaje):
+        print("Bot: Adiós!")
+        bot.ejecutando = False
+        return
 
 class Bot:
 

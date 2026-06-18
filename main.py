@@ -24,24 +24,27 @@ def validar_entero_positivo(num):
 
 #Creamos una función para validar la existencia del id ingresado
 def validar_existencia(archivo, num):
-    try:
-        with open(archivo, "r", encoding="utf-8") as ar:
-            lector_dict = csv.DictReader(ar)
-            #Creamos un diccionario auxiliar
-            dict_empelado = {}
-            for diccionario in lector_dict:
-                if num == int(diccionario['id_empleado']):
-                    #Si encuentra el id, guarda la info del empleado en el diccionario
-                    dict_empelado = diccionario
-                    return dict_empelado
-            raise ValueError(f"El id {num} no está en la lista.")
-    except FileNotFoundError:
-        print(f"Error: el archivo '{archivo}' no existe.")
-        return None
-    except ValueError as e:
-        print("Error:", e)
-        print()
-        return None
+    while True:
+        try:
+            with open(archivo, "r", encoding="utf-8") as ar:
+                lector_dict = csv.DictReader(ar)
+                #Creamos un diccionario auxiliar
+                dict_empelado = {}
+                for diccionario in lector_dict:
+                    if num == int(diccionario['id_empleado']):
+                        #Si encuentra el id, guarda la info del empleado en el diccionario
+                        dict_empelado = diccionario
+                        return dict_empelado
+                raise ValueError(f"El id {num} no está en la lista.")
+        except FileNotFoundError:
+            print(f"Error: el archivo '{archivo}' no existe.")
+            return None
+        except ValueError as e:
+            print("Error:", e)
+            num = input("Bot: Ingrese un id válido: ").strip()
+            num = validar_entero_positivo(num)
+        else:
+            return num
     
 #Creamos una función para validar el formato de las fechas ingresadas
 def validar_fecha(texto):
@@ -70,8 +73,7 @@ def validar_inicio_vacaciones(texto):
 
 # Función que verifica superposición de vacaciones en mismo sector
 def puede_tomar_vacaciones(id_emp, f_inicio, f_fin):
-    #formato_fecha = "%d/%m/%Y"
-
+   
     # Se determina sector del empleado solicitante
     sector_solicitante = str(id_emp)[0]
     # Se inicializa contador para superposición
@@ -84,8 +86,9 @@ def puede_tomar_vacaciones(id_emp, f_inicio, f_fin):
             sector_existente = id[0]
             if sector_existente == sector_solicitante:
                 # Si son del mismo sector se verifican las fechas
-                inicio_existente = validar_fecha(fila["fecha_inicio"]) #datetime.strptime(fila["fecha_inicio"], formato_fecha)
-                fin_existente = validar_fecha(fila["fecha_fin"]) #datetime.strptime(fila["fecha_fin"], formato_fecha)
+                
+                inicio_existente = validar_fecha(fila["fecha_inicio"])
+                fin_existente = validar_fecha(fila["fecha_fin"])
                 
                 if (f_inicio <= fin_existente and f_fin >= inicio_existente):
                     contador += 1
@@ -161,12 +164,14 @@ class Esperando_fechas:
             id = input("Bot: Decime tu número de identificación de empleado: ").strip()
             id = validar_entero_positivo(id)
             info_empleado = validar_existencia(archivo1, id)
+            
             print(f"Bot: Hola {info_empleado['nombre_empleado']}!")
             print(f"Bot: Te quedan {info_empleado['saldo_dias']} días de vacaciones disponibles.")
             fecha_inicio = input(f"Bot: {info_empleado['nombre_empleado']}, ingresá la fecha de inicio para tus vacaciones: ").strip()
             fecha_inicio = validar_fecha(fecha_inicio)
             fecha_inicio = validar_inicio_vacaciones(fecha_inicio)
             fecha_fin = input(f"Bot: {info_empleado['nombre_empleado']}, ingresá la fecha de fin para tus vacaciones: ").strip()
+            
             fecha_fin = validar_fecha(fecha_fin) #Valido que fin sea > a inicio?
             
             bot.fecha_inicio = fecha_inicio
@@ -189,7 +194,7 @@ class Validando_saldo:
         
         # Validar que tenga saldo suficiente
         if intervalo > int(bot.info_empleado["saldo_dias"]):
-            print(f"Bot: Sólo tienes {bot.info_empleado["saldo_dias"]}")
+            print(f"Bot: Sólo tienes {bot.info_empleado['saldo_dias']}")
             print("Bot: No se puede realizar la solicitud")
             respuesta = input("Bot: Queres solicitar solo los dias disponibles? (si/no): ").strip().lower()
             if respuesta == "si":
@@ -201,7 +206,9 @@ class Validando_saldo:
             
             else:
                 print("Bot: Tramite cancelado por falta de saldo.\n")
-                #bot.estado = Finalizar()
+                bot.estado = Finalizado()
+                bot.estado.procesar(bot, None)
+                return
 
         # Validar que no haya superposición de empleados del mismo sector
         id = bot.info_empleado["id_empleado"]
@@ -211,23 +218,28 @@ class Validando_saldo:
         else:
             print("Bot: No es posible solicitar vacaciones para la fecha solicitada")
             print("Bot: Ya hay dos empleados con los que se superponen fechas.")
-
+            bot.estado = Finalizado()
+            bot.estado.procesar(bot, None)
+            return
 
 class Esperando_aprobacion:
     
     def procesar(self, bot, mensaje):
-        print("Esperando aprobación del supervisor...")
+        print("Bot: Esperando aprobación del supervisor...")
         input("")
         actualizar_calendario(bot.info_empleado, bot.fecha_inicio, bot.fecha_fin)
-        dias_pedidos = (bot.fecha_fin - bot.fecha_inicio).days
+        dias_pedidos = (bot.fecha_fin - bot.fecha_inicio).days + 1
         actualizar_datos_empleado(bot.info_empleado, dias_pedidos)
-        print("Solicitud APROBADA!")
+        print("Bot: Solicitud APROBADA!")
         bot.estado = Finalizado()
         bot.estado.procesar(bot, None)
 
 class Finalizado:
+    
     def procesar(self, bot, mensaje):
         print("Bot: Adiós!")
+        bot.ejecutando = False
+        return
 
 
 class Bot:
@@ -235,6 +247,7 @@ class Bot:
     def __init__(self):
 
         self.estado = Inicio()
+        self.ejecutando = True
 
     def recibir_mensaje(self, mensaje):
 
@@ -251,14 +264,6 @@ archivo2 = "temp2.csv"
 
 bot = Bot()
 
-ejecutando = True
-
-while ejecutando:
-
+while bot.ejecutando:
     texto = input("Usuario: ").strip().lower()
-
-    if texto == "fin":
-        ejecutando = False
-
     bot.recibir_mensaje(texto)
-

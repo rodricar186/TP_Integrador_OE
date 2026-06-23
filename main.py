@@ -275,7 +275,7 @@ class Bot:
 import csv
 from datetime import datetime, timedelta
 
-archivo1 = "datos_empleados"
+archivo1 = "datos_empleados.csv"
 archivo2 = "datos_calendario.csv"
 
 bot = Bot()
